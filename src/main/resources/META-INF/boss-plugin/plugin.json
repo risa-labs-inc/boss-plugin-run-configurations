@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "pluginId": "ai.rever.boss.plugin.dynamic.runconfigurations",
+  "displayName": "Run Configurations (Dynamic)",
+  "version": "1.0.0",
+  "apiVersion": "1.0",
+  "mainClass": "ai.rever.boss.plugin.dynamic.runconfigurations.RunConfigurationsDynamicPlugin",
+  "type": "panel",
+  "description": "Auto-detect and run project configurations",
+  "author": "Risa Labs",
+  "url": "https://github.com/risa-labs-inc/boss-plugin-run-configurations",
+  "panel": {
+    "position": "left_top_bottom",
+    "priority": 6
+  },
+  "sandbox": {
+    "maxThreads": 4,
+    "maxRestartAttempts": 3,
+    "heartbeatIntervalMs": 5000
+  }
+}

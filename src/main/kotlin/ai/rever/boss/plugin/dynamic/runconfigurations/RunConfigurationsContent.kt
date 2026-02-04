@@ -9,13 +9,13 @@ import ai.rever.boss.plugin.scrollbar.lazyListScrollbar
 import ai.rever.boss.plugin.ui.BossTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -32,12 +32,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import compose.icons.FeatherIcons
+import compose.icons.SimpleIcons
+import compose.icons.feathericons.Terminal
+import compose.icons.feathericons.Zap
+import compose.icons.simpleicons.Go
+import compose.icons.simpleicons.Java
+import compose.icons.simpleicons.Javascript
+import compose.icons.simpleicons.Kotlin
+import compose.icons.simpleicons.Python
+import compose.icons.simpleicons.Rust
+import compose.icons.simpleicons.Typescript
 import kotlinx.coroutines.CoroutineScope
 
 /**
  * Run Configurations panel content (Dynamic Plugin).
  *
- * Displays auto-detected run configurations for the project.
+ * Displays auto-detected run configurations for the project,
+ * grouped by language with official brand icons.
  */
 @Composable
 fun RunConfigurationsContent(
@@ -117,14 +129,14 @@ private fun NoProjectMessage() {
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.FolderOpen,
+                imageVector = Icons.Outlined.Code,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colors.primary.copy(alpha = 0.6f)
+                tint = Color.Gray.copy(alpha = 0.5f)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No Project Open",
+                text = "No project selected",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colors.onBackground
@@ -145,46 +157,96 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
     val isScanning by viewModel.isScanning?.collectAsState() ?: return
     val lastError by viewModel.lastError?.collectAsState() ?: return
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedConfigId by viewModel.selectedConfigId.collectAsState()
     val statusMessage by viewModel.statusMessage.collectAsState()
-    val filterType by viewModel.filterType.collectAsState()
-    val filterLanguage by viewModel.filterLanguage.collectAsState()
     val listState = rememberLazyListState()
 
-    // Filter configurations
-    val filteredConfigurations = remember(configurations, searchQuery, filterType, filterLanguage) {
-        configurations.filter { config ->
-            val matchesSearch = searchQuery.isEmpty() ||
+    // Filter configurations by search
+    val filteredConfigurations = remember(configurations, searchQuery) {
+        if (searchQuery.isBlank()) {
+            configurations
+        } else {
+            configurations.filter { config ->
                 config.name.contains(searchQuery, ignoreCase = true) ||
-                config.filePath.contains(searchQuery, ignoreCase = true)
-            val matchesType = filterType == null || config.type == filterType
-            val matchesLanguage = filterLanguage == null || config.language == filterLanguage
-            matchesSearch && matchesType && matchesLanguage
+                        config.filePath.contains(searchQuery, ignoreCase = true) ||
+                        config.language.displayName.contains(searchQuery, ignoreCase = true)
+            }
         }
+    }
+
+    // Group configurations by language
+    val groupedConfigs = remember(filteredConfigurations) {
+        filteredConfigurations.groupBy { it.language }
     }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
+        color = Color(0xFF2B2D30)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Toolbar
-            ConfigurationsToolbar(
-                searchQuery = searchQuery,
-                onSearchChange = viewModel::updateSearchQuery,
-                onRefresh = viewModel::scanProject,
-                isScanning = isScanning
-            )
-
-            Divider(color = MaterialTheme.colors.onBackground.copy(alpha = 0.1f))
-
-            // Error message
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+        ) {
+            // Error banner
             if (lastError != null) {
-                ErrorMessage(
+                ErrorBanner(
                     message = lastError!!,
                     onDismiss = viewModel::clearError
                 )
             }
+
+            // Header with scan button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Detected Configurations",
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Scan/Refresh button
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(enabled = !isScanning) { viewModel.scanProject() }
+                        .padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isScanning) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 1.dp,
+                            color = MaterialTheme.colors.primary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Outlined.Refresh,
+                            contentDescription = "Rescan project",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colors.primary.copy(alpha = 0.8f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isScanning) "Scanning..." else "Rescan",
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colors.primary.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Search bar
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = viewModel::updateSearchQuery
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Status message
             if (statusMessage != null) {
@@ -192,40 +254,100 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                     message = statusMessage!!,
                     onDismiss = viewModel::clearStatusMessage
                 )
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // Loading indicator
-            if (isScanning) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(2.dp),
-                    color = MaterialTheme.colors.primary
-                )
-            }
+            // Content
+            when {
+                isScanning && configurations.isEmpty() -> {
+                    // Scanning in progress
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colors.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Scanning for run configurations...",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
 
-            // Configurations list
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (filteredConfigurations.isEmpty()) {
-                    EmptyMessage(
-                        isSearching = searchQuery.isNotEmpty() || filterType != null || filterLanguage != null,
-                        isScanning = isScanning
-                    )
-                } else {
+                filteredConfigurations.isEmpty() -> {
+                    // No configurations found
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                if (searchQuery.isNotBlank()) Icons.Outlined.Search else Icons.Outlined.Science,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = Color.Gray.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank())
+                                    "No configurations matching \"$searchQuery\""
+                                else
+                                    "No run configurations found",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                            if (searchQuery.isBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Add main functions or scripts to your project",
+                                    color = Color.Gray.copy(alpha = 0.7f),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                else -> {
+                    // Show grouped configurations
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .lazyListScrollbar(listState, Orientation.Vertical, getPanelScrollbarConfig())
+                            .lazyListScrollbar(
+                                listState = listState,
+                                direction = Orientation.Vertical,
+                                config = getPanelScrollbarConfig()
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        items(
-                            items = filteredConfigurations,
-                            key = { it.id }
-                        ) { config ->
-                            ConfigurationItem(
-                                config = config,
-                                isSelected = config.id == selectedConfigId,
-                                onSelect = { viewModel.select(config.id) },
-                                onRun = { viewModel.execute(config) }
-                            )
+                        groupedConfigs.forEach { (language, configs) ->
+                            // Language group header
+                            item(key = "header-${language.name}") {
+                                LanguageGroupHeader(language = language, count = configs.size)
+                            }
+
+                            // Configuration items
+                            items(
+                                items = configs,
+                                key = { it.id }
+                            ) { config ->
+                                RunConfigurationItem(
+                                    config = config,
+                                    onRun = { viewModel.execute(config) }
+                                )
+                            }
                         }
                     }
                 }
@@ -235,125 +357,91 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
 }
 
 @Composable
-private fun ConfigurationsToolbar(
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-    onRefresh: () -> Unit,
-    isScanning: Boolean
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(36.dp)
-            .background(MaterialTheme.colors.surface)
+            .height(28.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color(0xFF1E1F22))
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Search field
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .height(24.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colors.background.copy(alpha = 0.5f))
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                textStyle = TextStyle(
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colors.onSurface
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colors.primary),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (searchQuery.isEmpty()) {
-                            Text(
-                                text = "Search configurations...",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.4f)
-                            )
-                        }
-                        innerTextField()
+        Icon(
+            imageVector = Icons.Outlined.Search,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = Color.Gray.copy(alpha = 0.6f)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            textStyle = TextStyle(
+                fontSize = 11.sp,
+                color = Color.White
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colors.primary),
+            decorationBox = { innerTextField ->
+                Box {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "Search configurations...",
+                            fontSize = 11.sp,
+                            color = Color.Gray.copy(alpha = 0.5f)
+                        )
                     }
+                    innerTextField()
                 }
-            )
-            if (searchQuery.isNotEmpty()) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = "Clear",
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clickable { onSearchChange("") },
-                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-                )
             }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Refresh button
-        IconButton(
-            onClick = onRefresh,
-            modifier = Modifier.size(28.dp),
-            enabled = !isScanning
-        ) {
+        )
+        if (query.isNotEmpty()) {
             Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Scan Project",
-                modifier = Modifier.size(16.dp),
-                tint = if (isScanning) MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
-                       else MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+                imageVector = Icons.Default.Clear,
+                contentDescription = "Clear",
+                modifier = Modifier
+                    .size(14.dp)
+                    .clickable { onQueryChange("") },
+                tint = Color.Gray.copy(alpha = 0.6f)
             )
         }
     }
 }
 
 @Composable
-private fun ErrorMessage(
+private fun ErrorBanner(
     message: String,
     onDismiss: () -> Unit
 ) {
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colors.error.copy(alpha = 0.1f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(bottom = 8.dp),
+        color = Color(0xFF5C2020),
+        shape = RoundedCornerShape(4.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colors.error
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = message,
-            fontSize = 11.sp,
-            color = MaterialTheme.colors.error,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(
-            onClick = onDismiss,
-            modifier = Modifier.size(20.dp)
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Dismiss",
-                modifier = Modifier.size(12.dp),
-                tint = MaterialTheme.colors.error
+            Text(
+                text = message,
+                fontSize = 10.sp,
+                color = Color(0xFFFF8080),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = "X",
+                fontSize = 12.sp,
+                color = Color(0xFFFF8080),
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(4.dp)
             )
         }
     }
@@ -367,162 +455,161 @@ private fun StatusMessage(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colors.primary.copy(alpha = 0.1f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .background(MaterialTheme.colors.primary.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = message,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             color = MaterialTheme.colors.primary,
             modifier = Modifier.weight(1f)
         )
-        IconButton(
-            onClick = onDismiss,
-            modifier = Modifier.size(20.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Dismiss",
-                modifier = Modifier.size(12.dp),
-                tint = MaterialTheme.colors.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun EmptyMessage(isSearching: Boolean, isScanning: Boolean) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
         Icon(
-            imageVector = if (isSearching) Icons.Outlined.Search else Icons.Outlined.PlayArrow,
-            contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            tint = MaterialTheme.colors.onBackground.copy(alpha = 0.3f)
+            imageVector = Icons.Default.Close,
+            contentDescription = "Dismiss",
+            modifier = Modifier
+                .size(12.dp)
+                .clickable { onDismiss() },
+            tint = MaterialTheme.colors.primary
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = when {
-                isScanning -> "Scanning project..."
-                isSearching -> "No matching configurations"
-                else -> "No configurations found"
-            },
-            fontSize = 12.sp,
-            color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f)
-        )
-        if (!isSearching && !isScanning) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Click refresh to scan the project",
-                fontSize = 10.sp,
-                color = MaterialTheme.colors.onBackground.copy(alpha = 0.3f)
-            )
-        }
     }
 }
 
 @Composable
-private fun ConfigurationItem(
-    config: RunConfigurationData,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onRun: () -> Unit
+private fun LanguageGroupHeader(
+    language: LanguageData,
+    count: Int
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onSelect)
-            .background(
-                if (isSelected) MaterialTheme.colors.primary.copy(alpha = 0.1f)
-                else MaterialTheme.colors.background
-            )
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Type icon
         Icon(
-            imageVector = getTypeIcon(config.type),
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = getLanguageColor(config.language)
+            getLanguageIcon(language),
+            contentDescription = language.displayName,
+            modifier = Modifier.size(14.dp),
+            tint = getLanguageColor(language)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Configuration info
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = config.name,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colors.primary
-                        else MaterialTheme.colors.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = config.filePath.substringAfterLast('/'),
-                fontSize = 10.sp,
-                color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Text(
+            text = language.displayName,
+            fontSize = 11.sp,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.9f)
+        )
 
-        // Language badge
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(getLanguageColor(config.language).copy(alpha = 0.1f))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
-        ) {
-            Text(
-                text = config.language.displayName,
-                fontSize = 9.sp,
-                color = getLanguageColor(config.language),
-                fontWeight = FontWeight.Medium
-            )
-        }
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Text(
+            text = "($count)",
+            fontSize = 10.sp,
+            color = Color.Gray
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Run button
-        IconButton(
-            onClick = onRun,
-            modifier = Modifier.size(24.dp)
+        // Divider line
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(Color(0xFF4B5563))
+        )
+    }
+}
+
+@Composable
+private fun RunConfigurationItem(
+    config: RunConfigurationData,
+    onRun: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .clickable { onRun() },
+        color = Color(0xFF3C3F43),
+        elevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Config type icon
             Icon(
-                imageVector = Icons.Default.PlayArrow,
+                getConfigTypeIcon(config.type),
+                contentDescription = config.type.name,
+                modifier = Modifier.size(14.dp),
+                tint = getLanguageColor(config.language).copy(alpha = 0.8f)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Config info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = config.name,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colors.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // File path (relative)
+                val relativePath = config.filePath
+                    .removePrefix(config.workingDirectory)
+                    .removePrefix("/")
+
+                Text(
+                    text = relativePath,
+                    fontSize = 9.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Run button
+            Icon(
+                Icons.Outlined.PlayArrow,
                 contentDescription = "Run",
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colors.primary
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onRun() }
+                    .padding(2.dp),
+                tint = Color(0xFF4CAF50)
             )
         }
     }
 }
 
-/**
- * Get the icon for a configuration type.
- */
-private fun getTypeIcon(type: RunConfigurationTypeData): ImageVector {
-    return when (type) {
-        RunConfigurationTypeData.MAIN_FUNCTION -> Icons.Outlined.PlayArrow
-        RunConfigurationTypeData.SCRIPT -> Icons.Outlined.Description
-        RunConfigurationTypeData.TEST -> Icons.Outlined.Science
-        RunConfigurationTypeData.CUSTOM -> Icons.Outlined.Settings
+// ═══════════════════════════════════════════════════════════════════════════
+// LANGUAGE ICONS AND COLORS (using SimpleIcons)
+// ═══════════════════════════════════════════════════════════════════════════
+
+private fun getLanguageIcon(language: LanguageData): ImageVector {
+    return when (language) {
+        LanguageData.KOTLIN -> SimpleIcons.Kotlin
+        LanguageData.JAVA -> SimpleIcons.Java
+        LanguageData.PYTHON -> SimpleIcons.Python
+        LanguageData.JAVASCRIPT -> SimpleIcons.Javascript
+        LanguageData.TYPESCRIPT -> SimpleIcons.Typescript
+        LanguageData.GO -> SimpleIcons.Go
+        LanguageData.RUST -> SimpleIcons.Rust
+        LanguageData.UNKNOWN -> FeatherIcons.Terminal
     }
 }
 
-/**
- * Get the color for a language.
- */
-@Composable
 private fun getLanguageColor(language: LanguageData): Color {
     return when (language) {
         LanguageData.KOTLIN -> Color(0xFF7F52FF)
@@ -532,6 +619,15 @@ private fun getLanguageColor(language: LanguageData): Color {
         LanguageData.TYPESCRIPT -> Color(0xFF3178C6)
         LanguageData.GO -> Color(0xFF00ADD8)
         LanguageData.RUST -> Color(0xFFDEA584)
-        LanguageData.UNKNOWN -> MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+        LanguageData.UNKNOWN -> Color.Gray
+    }
+}
+
+private fun getConfigTypeIcon(type: RunConfigurationTypeData): ImageVector {
+    return when (type) {
+        RunConfigurationTypeData.MAIN_FUNCTION -> FeatherIcons.Zap
+        RunConfigurationTypeData.SCRIPT -> FeatherIcons.Terminal
+        RunConfigurationTypeData.TEST -> Icons.Outlined.Science
+        RunConfigurationTypeData.CUSTOM -> Icons.Outlined.Code
     }
 }

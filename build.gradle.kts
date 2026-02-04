@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ai.rever.boss.plugin.dynamic"
-version = "1.0.3"
+version = "1.0.4"
 
 java {
     toolchain {
@@ -29,9 +29,9 @@ repositories {
 
 dependencies {
     // Plugin API from Maven Central
-    implementation("com.risaboss:plugin-api-desktop:1.0.4")
-    implementation("com.risaboss:plugin-ui-core-desktop:1.0.4")
-    implementation("com.risaboss:plugin-scrollbar-desktop:1.0.4")
+    implementation("com.risaboss:plugin-api-desktop:1.0.7")
+    implementation("com.risaboss:plugin-ui-core-desktop:1.0.7")
+    implementation("com.risaboss:plugin-scrollbar-desktop:1.0.7")
 
     // Compose dependencies
     implementation(compose.desktop.currentOs)
@@ -41,8 +41,9 @@ dependencies {
     implementation(compose.material)
     implementation(compose.materialIconsExtended)
 
-    // Compose Icons (FeatherIcons)
+    // Compose Icons (FeatherIcons, SimpleIcons)
     implementation("br.com.devsrsouza.compose.icons:feather:1.1.1")
+    implementation("br.com.devsrsouza.compose.icons:simple-icons:1.1.1")
 
     // Decompose for ComponentContext
     implementation("com.arkivanov.decompose:decompose:3.3.0")

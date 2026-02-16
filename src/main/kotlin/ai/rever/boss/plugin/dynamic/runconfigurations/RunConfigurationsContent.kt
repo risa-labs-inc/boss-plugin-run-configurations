@@ -62,18 +62,25 @@ fun RunConfigurationsContent(
         RunConfigurationsViewModel(runConfigurationDataProvider, scope, getWindowId, getProjectPath)
     }
 
+    // Read project path inside composable so Compose tracks changes and triggers recomposition
+    val projectPath = getProjectPath()
+    val windowId = getWindowId()
+
     BossTheme {
         if (!viewModel.isAvailable()) {
             NoProviderMessage()
-        } else if (!viewModel.hasProject()) {
+        } else if (projectPath.isNullOrEmpty()) {
             NoProjectMessage()
         } else {
             ConfigurationsList(viewModel)
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.initialize()
+    // Re-scan when project or window changes (not just Unit)
+    LaunchedEffect(projectPath, windowId) {
+        if (!projectPath.isNullOrEmpty() && windowId != null) {
+            viewModel.scanProject()
+        }
     }
 }
 

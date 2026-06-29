@@ -319,7 +319,7 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Add main functions or scripts to your project",
-                                    color = BossThemeColors.TextSecondary,
+                                    color = BossThemeColors.TextMuted,
                                     fontSize = 10.sp
                                 )
                             }

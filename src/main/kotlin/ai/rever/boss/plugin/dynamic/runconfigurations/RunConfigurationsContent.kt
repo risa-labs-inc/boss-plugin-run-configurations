@@ -7,6 +7,7 @@ import ai.rever.boss.plugin.api.RunConfigurationTypeData
 import ai.rever.boss.plugin.scrollbar.getPanelScrollbarConfig
 import ai.rever.boss.plugin.scrollbar.lazyListScrollbar
 import ai.rever.boss.plugin.ui.BossTheme
+import ai.rever.boss.plugin.ui.BossThemeColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -139,7 +140,7 @@ private fun NoProjectMessage() {
                 imageVector = Icons.Outlined.Code,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = Color.Gray.copy(alpha = 0.5f)
+                tint = BossThemeColors.TextMuted
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -187,7 +188,7 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF2B2D30)
+        color = BossThemeColors.SurfaceColor
     ) {
         Column(
             modifier = Modifier
@@ -210,7 +211,7 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                 Text(
                     text = "Detected Configurations",
                     fontSize = 10.sp,
-                    color = Color.Gray,
+                    color = BossThemeColors.TextSecondary,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -283,7 +284,7 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Scanning for run configurations...",
-                                color = Color.Gray,
+                                color = BossThemeColors.TextSecondary,
                                 fontSize = 12.sp
                             )
                         }
@@ -303,7 +304,7 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                                 if (searchQuery.isNotBlank()) Icons.Outlined.Search else Icons.Outlined.Science,
                                 contentDescription = null,
                                 modifier = Modifier.size(32.dp),
-                                tint = Color.Gray.copy(alpha = 0.5f)
+                                tint = BossThemeColors.TextMuted
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -311,14 +312,14 @@ private fun ConfigurationsList(viewModel: RunConfigurationsViewModel) {
                                     "No configurations matching \"$searchQuery\""
                                 else
                                     "No run configurations found",
-                                color = Color.Gray,
+                                color = BossThemeColors.TextSecondary,
                                 fontSize = 12.sp
                             )
                             if (searchQuery.isBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Add main functions or scripts to your project",
-                                    color = Color.Gray.copy(alpha = 0.7f),
+                                    color = BossThemeColors.TextMuted,
                                     fontSize = 10.sp
                                 )
                             }
@@ -373,7 +374,7 @@ private fun SearchBar(
             .fillMaxWidth()
             .height(28.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(Color(0xFF1E1F22))
+            .background(BossThemeColors.BackgroundColor)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -381,7 +382,7 @@ private fun SearchBar(
             imageVector = Icons.Outlined.Search,
             contentDescription = null,
             modifier = Modifier.size(14.dp),
-            tint = Color.Gray.copy(alpha = 0.6f)
+            tint = BossThemeColors.TextMuted
         )
         Spacer(modifier = Modifier.width(6.dp))
         BasicTextField(
@@ -391,7 +392,7 @@ private fun SearchBar(
             singleLine = true,
             textStyle = TextStyle(
                 fontSize = 11.sp,
-                color = Color.White
+                color = BossThemeColors.TextPrimary
             ),
             cursorBrush = SolidColor(MaterialTheme.colors.primary),
             decorationBox = { innerTextField ->
@@ -400,7 +401,7 @@ private fun SearchBar(
                         Text(
                             text = "Search configurations...",
                             fontSize = 11.sp,
-                            color = Color.Gray.copy(alpha = 0.5f)
+                            color = BossThemeColors.TextMuted
                         )
                     }
                     innerTextField()
@@ -414,7 +415,7 @@ private fun SearchBar(
                 modifier = Modifier
                     .size(14.dp)
                     .clickable { onQueryChange("") },
-                tint = Color.Gray.copy(alpha = 0.6f)
+                tint = BossThemeColors.TextMuted
             )
         }
     }
@@ -429,7 +430,7 @@ private fun ErrorBanner(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp),
-        color = Color(0xFF5C2020),
+        color = BossThemeColors.ErrorColor.copy(alpha = 0.2f),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
@@ -439,13 +440,13 @@ private fun ErrorBanner(
             Text(
                 text = message,
                 fontSize = 10.sp,
-                color = Color(0xFFFF8080),
+                color = BossThemeColors.ErrorColor,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 text = "X",
                 fontSize = 12.sp,
-                color = Color(0xFFFF8080),
+                color = BossThemeColors.ErrorColor,
                 modifier = Modifier
                     .clickable { onDismiss() }
                     .padding(4.dp)
@@ -514,7 +515,7 @@ private fun LanguageGroupHeader(
         Text(
             text = "($count)",
             fontSize = 10.sp,
-            color = Color.Gray
+            color = BossThemeColors.TextSecondary
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -524,7 +525,7 @@ private fun LanguageGroupHeader(
             modifier = Modifier
                 .weight(1f)
                 .height(1.dp)
-                .background(Color(0xFF4B5563))
+                .background(BossThemeColors.BorderColor)
         )
     }
 }
@@ -540,7 +541,7 @@ private fun RunConfigurationItem(
             .padding(start = 20.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
             .clip(RoundedCornerShape(4.dp))
             .clickable { onRun() },
-        color = Color(0xFF3C3F43),
+        color = BossThemeColors.SurfaceColor,
         elevation = 1.dp
     ) {
         Row(
@@ -577,7 +578,7 @@ private fun RunConfigurationItem(
                 Text(
                     text = relativePath,
                     fontSize = 9.sp,
-                    color = Color.Gray,
+                    color = BossThemeColors.TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -594,7 +595,7 @@ private fun RunConfigurationItem(
                     .clip(RoundedCornerShape(4.dp))
                     .clickable { onRun() }
                     .padding(2.dp),
-                tint = Color(0xFF4CAF50)
+                tint = BossThemeColors.SuccessColor
             )
         }
     }

@@ -40,5 +40,9 @@ class RunConfigurationsDynamicPlugin : DynamicPlugin {
                 getProjectPath = getProjectPath
             )
         }
+        // Contribute run_config_list/run MCP tools; auto-removed on disable/unload.
+        context.registerMcpToolProvider(
+            RunConfigurationsMcpToolProvider(pluginId, runConfigurationDataProvider, getWindowId, getProjectPath)
+        )
     }
 }
